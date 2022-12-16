@@ -8,6 +8,7 @@ const app = express();
 const httpServer = http.createServer(app);
 const colors = require("@colors/colors/safe");
 const DoChecks = require("./utils/DoChecks");
+const teamspeak = require("./teamspeak")(app);
 
 // app specific
 app.data = {};
@@ -31,6 +32,7 @@ DoChecks()
         console.log(
             `\n${colors.red("[!]")} Some checks have not passed, stopping.\n`
         );
+        teamspeak.quit();
         process.exit(-1);
     });
 

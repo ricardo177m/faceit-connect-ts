@@ -31,6 +31,7 @@
     "helmet": "^6.0.1",
     "http": "^0.0.1-security",
     "mysql2": "^2.3.3",
+    "ts3-nodejs-library": "^3.4.1",
     "uuid": "^9.0.0",
     "validator": "^13.7.0"
   }

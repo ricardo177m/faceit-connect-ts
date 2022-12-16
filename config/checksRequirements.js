@@ -9,6 +9,11 @@ const REQUIRED_ENV_VARS = [
     "FACEIT_CLIENTSECRET",
     "APP_URL",
     "USERTOKEN",
+    "TS3_HOST",
+    "TS3_QUERYPORT",
+    "TS3_SERVERPORT",
+    "TS3_USERNAME",
+    "TS3_PW",
 ];
 
 const REQUIRED_TABLES = [

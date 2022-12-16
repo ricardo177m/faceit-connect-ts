@@ -5,6 +5,7 @@ const validator = require("validator").default;
 const { config } = require("../config/config");
 const tools = require("../utils/tools");
 const dbpool = require("../services/db");
+const Linkage = require("../utils/Linkage");
 
 router.get("/link", async (req, res) => {
     const clientid = process.env.FACEIT_CLIENTID;
@@ -46,33 +47,36 @@ router.get("/oauth/redirect", async (req, res) => {
                             Authorization: "Bearer " + accessToken,
                         },
                     }).then(async (userInfoResponse) => {
-                        console.log(userInfoResponse);
                         // check token
-                        if (req.query.state !== undefined) {
-                            let query = `SELECT * FROM link WHERE token = ?`;
-                            let params = [req.query.state];
-                            const [select_res] = await dbpool.execute(query, params);
+                        if (req.query.state === undefined)
+                            return res.status(400).json({
+                                message: "Invalid token",
+                                success: false,
+                            });
 
-                            if (!select_res.length) {
-                                return res.status(400).json({
-                                    message: "Invalid token",
-                                    success: false,
-                                });
-                            }
+                        const token = req.query.state;
+                        const status = await Linkage.getLinkageStatusByToken(token);
 
-                            query = "UPDATE link set token = null, faceit_id = ?, nickname = ?, linked_at = CURRENT_TIMESTAMP() WHERE token = ?";
-                            params = [userInfoResponse.data.guid, userInfoResponse.data.nickname, req.query.state];
-                            const [update_res] = await dbpool.execute(query, params);
+                        if (status === null)
+                            return res.status(400).json({
+                                message: "Invalid token",
+                                success: false,
+                            });
 
-                            if (!update_res.affectedRows) {
-                                return res.status(500).json({
-                                    message: "Internal server error",
-                                    success: false,
-                                });
-                            }
+                        const linkSuccess = await Linkage.linkProfile(token, userInfoResponse.data.guid, userInfoResponse.data.nickname);
 
-                            res.redirect("/success");
-                        }
+                        if (!linkSuccess)
+                            return res.status(500).json({
+                                message: "Internal server error",
+                                success: false,
+                            });
+
+                        // send success message to teamspeak client
+                        req.app.emit("successfulLink", {
+                            uuid: status.uuid,
+                            nickname: userInfoResponse.data.nickname,
+                        });
+                        res.redirect("/success");
                     });
                 })
                 .catch((err) => {
