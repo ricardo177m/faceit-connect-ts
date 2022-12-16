@@ -1,0 +1,37 @@
+{
+  "name": "faceitconnect",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc --project ./",
+    "start-ts": "nodemon ./dist/server.js",
+    "start": "npm i && node server.js",
+    "dev": "nodemon ./server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^4.17.15",
+    "@types/node": "^18.11.15",
+    "nodemon": "^2.0.20",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "@colors/colors": "^1.5.0",
+    "axios": "^1.2.1",
+    "axios-cache-interceptor": "^0.10.7",
+    "bcrypt": "^5.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security",
+    "helmet": "^6.0.1",
+    "http": "^0.0.1-security",
+    "mysql2": "^2.3.3",
+    "uuid": "^9.0.0",
+    "validator": "^13.7.0"
+  }
+}
