@@ -6,27 +6,38 @@ const { config } = require("../config/config");
 const tools = require("../utils/tools");
 const dbpool = require("../services/db");
 
+router.get("/link", async (req, res) => {
+    const clientid = process.env.FACEIT_CLIENTID;
+    const token = req.query.token;
+    if (token === null || token === undefined) {
+        res.status(400).json({
+            msg: "Undefined token",
+            error: true,
+        });
+        return;
+    }
+    const url = `${config.faceitEndpoints.accounts}?response_type=code&client_id=${clientid}&redirect_popup=true&state=${token}`;
+    res.redirect(url);
+});
+
 router.get("/oauth/redirect", async (req, res) => {
     const clientid = process.env.FACEIT_CLIENTID;
     const clientsecret = process.env.FACEIT_CLIENTSECRET;
     const code = req.query.code;
-    const credentials = Buffer.from(
-        `${clientid}:${clientsecret}`,
-        "utf8"
-    ).toString("base64");
+    const credentials = Buffer.from(`${clientid}:${clientsecret}`, "utf8").toString("base64");
 
     getFaceitTokenEndpoint()
-        .then((token_endpoint) => {
+        .then((tokenEndpoint) => {
             axios({
                 method: "post",
-                url: `${token_endpoint}?code=${code}&grant_type=authorization_code`,
+                url: `${tokenEndpoint}?code=${code}&grant_type=authorization_code`,
                 headers: {
                     accept: "application/json",
                     Authorization: `Basic ${credentials}`,
                 },
             })
-                .then((response) => {
-                    const accessToken = response.data.access_token;
+                .then((tokenEndpointResponse) => {
+                    const accessToken = tokenEndpointResponse.data.access_token;
                     axios({
                         method: "get",
                         url: config.faceitEndpoints.oauthUserInfo,
@@ -34,101 +45,47 @@ router.get("/oauth/redirect", async (req, res) => {
                             accept: "application/json",
                             Authorization: "Bearer " + accessToken,
                         },
-                    }).then(async (res2) => {
-                        if (
-                            req.query.state !== undefined &&
-                            validator.isUUID(req.query.state)
-                        ) {
-                            /**
-                             *  verificar se utilizador já está na tabela users
-                             *  se não estiver, adicionar
-                             *  se estiver, atualizar nickname na tabela users caso necessário
-                             *  adicionar a sessão
-                             */
-
-                            const query = `SELECT * FROM users WHERE playerid = ?`;
-                            const params = [res2.data.guid];
-                            const [select_res] = await dbpool.execute(
-                                query,
-                                params
-                            );
-
-                            var uid;
+                    }).then(async (userInfoResponse) => {
+                        console.log(userInfoResponse);
+                        // check token
+                        if (req.query.state !== undefined) {
+                            let query = `SELECT * FROM link WHERE token = ?`;
+                            let params = [req.query.state];
+                            const [select_res] = await dbpool.execute(query, params);
 
                             if (!select_res.length) {
-                                // adicionar utilizador à tabela users
-                                const query2 = `INSERT INTO users (playerid,nickname) VALUES (?,?)`;
-                                const params2 = [
-                                    res2.data.guid,
-                                    res2.data.nickname,
-                                ];
-                                const [insert_res] = await dbpool.execute(
-                                    query2,
-                                    params2
-                                );
-
-                                if (!insert_res.affectedRows) {
-                                    res.status(500).json({
-                                        message: "Internal server error",
-                                        success: false,
-                                    });
-                                    return;
-                                }
-
-                                uid = insert_res.insertId;
-                            } else {
-                                const userData = select_res[0];
-                                uid = userData["id"];
-                            }
-
-                            try {
-                                // adicionar à tabela sessions
-                                const clientInfo =
-                                    tools.getClientInfoWithCF(req);
-
-                                const query2 = `INSERT INTO sessions (login_id,userid,ip,country) VALUES (?,?,?,?)`;
-                                const params2 = [
-                                    req.query.state,
-                                    uid,
-                                    clientInfo.ip,
-                                    clientInfo.country,
-                                ];
-                                const [insert_res] = await dbpool.execute(
-                                    query2,
-                                    params2
-                                );
-
-                                if (!insert_res.affectedRows) {
-                                    res.status(500).json({
-                                        message: "Internal server error",
-                                        success: false,
-                                    });
-                                    return;
-                                }
-
-                                // atualizar last_login e nickname (caso seja alterado)
-                                const query3 = `UPDATE users SET nickname = ?, last_login = NOW() WHERE id = ?`;
-                                const params3 = [res2.data.nickname, uid];
-                                await dbpool.execute(query3, params3);
-
-                                // redirect
-                                res.redirect(process.env.APP_URL);
-                            } catch (error) {
                                 return res.status(400).json({
-                                    message: "Bad request",
+                                    message: "Invalid token",
                                     success: false,
                                 });
                             }
-                        } else {
-                            return res.status(400).json({
-                                message: "Bad request",
-                                success: false,
-                            });
+
+                            query = "UPDATE link set token = null, faceit_id = ?, nickname = ?, linked_at = CURRENT_TIMESTAMP() WHERE token = ?";
+                            params = [userInfoResponse.data.guid, userInfoResponse.data.nickname, req.query.state];
+                            const [update_res] = await dbpool.execute(query, params);
+
+                            if (!update_res.affectedRows) {
+                                return res.status(500).json({
+                                    message: "Internal server error",
+                                    success: false,
+                                });
+                            }
+
+                            res.redirect("/success");
                         }
                     });
                 })
                 .catch((err) => {
-                    console.error(err.response.data);
+                    // check if error is from axios
+                    if (err.response) {
+                        if (err.response.data.error == "invalid_grant")
+                            return res.status(401).json({
+                                message: "Invalid token, please try to login again",
+                                success: false,
+                            });
+                        console.error(err.response.data);
+                        console.error(err.response.status);
+                    } else console.error(err);
                     res.status(500).json({
                         message: "Internal server error",
                         success: false,
@@ -136,9 +93,9 @@ router.get("/oauth/redirect", async (req, res) => {
                 });
         })
         .catch((err) => {
-            console.error(err.response.data);
+            console.error(err);
             res.status(500).json({
-                message: "Internal server error",
+                message: "Internal server error1",
                 success: false,
             });
         });

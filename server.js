@@ -35,8 +35,10 @@ DoChecks()
     });
 
 // routes
-const BASE = "/v1";
-app.use(BASE, require("./routes/Oauth"));
+// const BASE = "";
+app.use("/", require("./routes/Oauth"));
+
+app.use('/success', express.static('public/success.html'))
 
 // fall errors
 app.use((req, res, next) => {

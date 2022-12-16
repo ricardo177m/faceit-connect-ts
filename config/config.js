@@ -6,6 +6,7 @@ const CONFIG = {
         lobbies: "https://api.faceit.com/lobby/v1/lobbies",
         oauthUserInfo: "https://api.faceit.com/auth/v1/resources/userinfo",
         openidConfig: "https://api.faceit.com/auth/v1/openid_configuration",
+        accounts: "https://accounts.faceit.com",
     },
 };
 

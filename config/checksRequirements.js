@@ -9,32 +9,16 @@ const REQUIRED_ENV_VARS = [
     "FACEIT_CLIENTSECRET",
     "APP_URL",
     "USERTOKEN",
-    "STEAM_API_KEY",
-    "DEVPASSWORD",
 ];
 
 const REQUIRED_TABLES = [
-    "appeals",
-    "countries",
-    "logs",
-    "logs_visitors",
-    "notifications",
-    "players",
-    "player_votes",
-    "reports",
-    "sessions",
-    "settings",
-    "users",
-    "v2_logs",
-    "v2_visits",
-    "v2_sockets",
-    "v2_comments",
+    "link",
 ];
 
-const REQUIRED_SETTINGS = ["update_text"];
+// const REQUIRED_SETTINGS = ["update_text"];
 
 module.exports = {
     requiredEnvVars: REQUIRED_ENV_VARS,
     requiredTables: REQUIRED_TABLES,
-    requiredSettings: REQUIRED_SETTINGS,
+    // requiredSettings: REQUIRED_SETTINGS,
 };

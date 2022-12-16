@@ -134,25 +134,25 @@ function CheckDb() {
         }
 
         // check settings table
-        console.log(`   ${colors.yellow("4.")} Checking settings...`);
-        flag = false;
-        try {
-            const settings = await Settings.getAll();
-            const settingsLength = Object.keys(settings).length;
-            let i = 0;
-            for (; i < settingsLength; i++) {
-                if (settings[requiredSettings[i]] === undefined) flag = true;
-            }
-            if (i !== settingsLength) flag = true;
-        } catch (error) {
-            console.log(`   ${colors.red("[X]")} Error: ${error.message}`);
-            return reject();
-        }
+        // console.log(`   ${colors.yellow("4.")} Checking settings...`);
+        // flag = false;
+        // try {
+        //     const settings = await Settings.getAll();
+        //     const settingsLength = Object.keys(settings).length;
+        //     let i = 0;
+        //     for (; i < settingsLength; i++) {
+        //         if (settings[requiredSettings[i]] === undefined) flag = true;
+        //     }
+        //     if (i !== settingsLength) flag = true;
+        // } catch (error) {
+        //     console.log(`   ${colors.red("[X]")} Error: ${error.message}`);
+        //     return reject();
+        // }
 
-        if (flag) {
-            console.log(`   ${colors.red("[X]")} Some settings are missing.`);
-            return reject();
-        }
+        // if (flag) {
+        //     console.log(`   ${colors.red("[X]")} Some settings are missing.`);
+        //     return reject();
+        // }
 
         console.log(`\n${colors.green("[✔]")} All checks passed!`);
         resolve();
