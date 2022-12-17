@@ -14,6 +14,8 @@ const REQUIRED_ENV_VARS = [
     "TS3_SERVERPORT",
     "TS3_USERNAME",
     "TS3_PW",
+    "LINKED_GID",
+    "LOBBY_PARENT_CID",
 ];
 
 const REQUIRED_TABLES = [

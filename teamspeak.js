@@ -2,6 +2,8 @@ const { TeamSpeak } = require("ts3-nodejs-library");
 const colors = require("@colors/colors/safe");
 const { config } = require("./config/config");
 const Linkage = require("./utils/Linkage");
+const Faceit = require("./utils/Faceit");
+const Generator = require("./utils/Generator");
 
 module.exports = (app) => {
     const teamspeak = new TeamSpeak({
@@ -12,6 +14,12 @@ module.exports = (app) => {
         password: process.env.TS3_PW,
         nickname: config.teamspeak.nickname,
     });
+
+    function addToLinkedGroup(client) {
+        const linkedGroupId = process.env.LINKED_GID;
+        if (client.servergroups.includes(linkedGroupId)) return;
+        teamspeak.clientAddServerGroup(client.databaseId, linkedGroupId);
+    }
 
     teamspeak.on("ready", () => {
         console.log(`${colors.green("[✔]")} TeamSpeak ready`);
@@ -37,18 +45,48 @@ module.exports = (app) => {
             // if (!channel.flagDefault) return;
 
             // add client to server group "Linked" if not already in
-            const isOnGroup = client.servergroups.find((group) => group == config.teamspeak.linkedGroupId);
-            if (!isOnGroup) client.addGroups([config.teamspeak.linkedGroupId]);
+            addToLinkedGroup(client);
+
+            // check lobby
+            const lobby = await Faceit.getClanLobby(status.faceit_id);
+
+            if (lobby !== null) {
+                // check if there is a channel for the lobby
+                let channel = await teamspeak.getChannelByName(lobby.name);
+                if (!channel) {
+                    channel = await teamspeak.channelCreate(lobby.name, {
+                        channelMaxclients: 5,
+                        channelFlagMaxclientsUnlimited: false,
+                        cpid: process.env.LOBBY_PARENT_CID,
+                        channelPassword: Generator.generateToken(),
+                    });
+                }
+                await teamspeak.clientMove(client.clid, channel.cid);
+                teamspeak.clientMove((await teamspeak.whoami()).clientId, process.env.LOBBY_PARENT_CID);
+            }
+        });
+
+        teamspeak.on("clientdisconnect", async (event) => {
+            // search for all child channels of the lobby parent channel
+            const channels = await teamspeak.channelList({ pid: process.env.LOBBY_PARENT_CID });
+            channels.forEach(async (channel) => {
+                // if empty delete
+                if (channel.totalClients === 0) await teamspeak.channelDelete(channel.cid, true);
+            });
         });
 
         app.on("successfulLink", async (data) => {
             const client = await teamspeak.getClientByUid(data.uuid);
-            if (client === undefined || client === null) return;
+            if (!client) return;
             teamspeak.sendTextMessage(client.clid, 1, config.teamspeak.successfulLinkMsg.replace("<NICKNAME>", data.nickname));
-            teamspeak.clientAddServerGroup(client.databaseId, config.teamspeak.linkedGroupId);
+            addToLinkedGroup(client);
         });
 
-        teamspeak.on("textmessage", () => {});
+        teamspeak.on("textmessage", (event) => {
+            if ("TEST" in process.env && process.env.TEST === "1") {
+                if (event.msg == "!getcid") teamspeak.sendTextMessage(event.invoker.clid, 1, event.invoker.cid);
+            }
+        });
 
         teamspeak.on("close", async () => {
             console.log("Disconnected, trying to reconnect...");

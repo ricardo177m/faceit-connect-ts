@@ -20,7 +20,6 @@ const CONFIG = {
             "        [color=#0cc43a]Bons jogos![/color]\n" +
             "[/b]",
         successfulLinkMsg: "[b]A tua FACEIT foi vinculada com sucesso, bem-vindo [color=#ff5500]<NICKNAME>[/color]![/b]",
-        linkedGroupId: 9,
     },
 };
 
