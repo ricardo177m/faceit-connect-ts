@@ -3,6 +3,8 @@ const CONFIG = {
     clanId: "61395179-2483-49c9-a9b2-dd251a5ca0e0",
 
     faceitEndpoints: {
+        user: "https://api.faceit.com/users/v1/users",
+        party: "https://api.faceit.com/lobby/v1/parties",
         lobbies: "https://api.faceit.com/lobby/v1/lobbies",
         oauthUserInfo: "https://api.faceit.com/auth/v1/resources/userinfo",
         openidConfig: "https://api.faceit.com/auth/v1/openid_configuration",

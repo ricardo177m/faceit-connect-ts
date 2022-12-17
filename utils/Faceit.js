@@ -2,6 +2,19 @@ const { config } = require("../config/config");
 const axios = require("axios");
 
 module.exports = {
+    /**
+     * É possível obter o ID da party efetuando um pedido
+     * à seguinte endpoint e obter active_team_id:
+     *      https://api.faceit.com/core/v1/users/{playerID}
+     * ... e depois obter members_ids da seguinte endpoint:
+     *      https://api.faceit.com/core/v1/teams/{partyID}
+     *
+     * Para o lobby, é necessário efetuar um pedido à
+     * seguinte endpoint com autenticação com token de
+     * sessão de um utilizador pertencente ao clã:
+     *      https://api.faceit.com/lobby/v1/lobbies?entity_id={clanID}
+     */
+
     getClanLobby: async (faceitPlayerId) => {
         const url = `${config.faceitEndpoints.lobbies}?entity_id=${config.clanId}`;
         let options = {
@@ -37,8 +50,41 @@ module.exports = {
                 }
                 return null;
             })
-            .catch((error) => {
-                return null;
-            });
+            .catch(() => null);
+    },
+
+    getParty: async (faceitPlayerId) => {
+        let url = `${config.faceitEndpoints.user}/${faceitPlayerId}`;
+        let options = {
+            headers: {
+                "Cache-Control": "no-cache",
+                Pragma: "no-cache",
+                Expires: "0",
+            },
+        };
+        const token = process.env.USERTOKEN;
+        if (token !== null) options.headers["Authorization"] = `Bearer ${token}`;
+
+        const userPartyId = await axios
+            .get(url, options)
+            .then((response) => response.data.payload.active_team_id)
+            .catch(() => null);
+
+        if (!userPartyId) return null;
+
+        url = `${config.faceitEndpoints.party}/${userPartyId}`;
+
+        return axios
+            .get(url, options)
+            .then((response) => {
+                return {
+                    type: "party",
+                    name: response.data.name,
+                    id: response.data.id,
+                    members: [...response.data.members_ids, ...response.data.pending_members_ids],
+                    exists: true,
+                };
+            })
+            .catch(() => null);
     },
 };

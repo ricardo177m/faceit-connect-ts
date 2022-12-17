@@ -22,25 +22,26 @@ module.exports = (app) => {
     }
 
     async function checkLobby(playerId, client) {
-        // check lobby
-        const lobby = await Faceit.getClanLobby(playerId);
+        // check lobby or party
+        let lobby = await Faceit.getClanLobby(playerId);
+        if (lobby === null && process.env.ENABLE_PARTY === "true")
+            lobby = await Faceit.getParty(playerId);
+        if (lobby === null) return;
 
-        if (lobby !== null) {
-            // check if there is a channel for the lobby
-            let channel = await teamspeak.getChannelByName(lobby.name);
-            if (!channel) {
-                channel = await teamspeak.channelCreate(lobby.name, {
-                    channelMaxclients: 5,
-                    channelFlagMaxclientsUnlimited: false,
-                    cpid: process.env.LOBBY_PARENT_CID,
-                    channelPassword: Generator.generateToken(),
-                });
-            }
-            try {
-                await teamspeak.clientMove(client.clid, channel.cid);
-            } catch (error) {} // client made request but left too early the ts server
-            teamspeak.clientMove((await teamspeak.whoami()).clientId, process.env.LOBBY_PARENT_CID);
+        // check if there is a channel for the lobby
+        let channel = await teamspeak.getChannelByName(lobby.name);
+        if (!channel) {
+            channel = await teamspeak.channelCreate(lobby.name, {
+                channelMaxclients: 5,
+                channelFlagMaxclientsUnlimited: false,
+                cpid: process.env.LOBBY_PARENT_CID,
+                channelPassword: Generator.generateToken(),
+            });
         }
+        try {
+            await teamspeak.clientMove(client.clid, channel.cid);
+        } catch (error) {} // client made request but left too early the ts server
+        teamspeak.clientMove((await teamspeak.whoami()).clientId, process.env.LOBBY_PARENT_CID); // move server query to another channel
     }
 
     teamspeak.on("ready", () => {

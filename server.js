@@ -3,7 +3,7 @@ const express = require("express");
 const http = require("http");
 const helmet = require("helmet");
 const cors = require("cors");
-const { config, port } = require("./config/config");
+const { port } = require("./config/config");
 const app = express();
 const httpServer = http.createServer(app);
 const colors = require("@colors/colors/safe");
@@ -12,9 +12,6 @@ const teamspeak = require("./teamspeak")(app);
 
 // app specific
 app.data = {};
-app.data.cachedPages = new Map();
-app.data.lastUpdate = Math.floor(Date.now() / 1000);
-app.adminPerms = config.adminPerms;
 
 // middlewares
 const { corsOptions } = require("./middlewares/corsOptions");

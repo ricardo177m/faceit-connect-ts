@@ -16,6 +16,7 @@ const REQUIRED_ENV_VARS = [
     "TS3_PW",
     "LINKED_GID",
     "LOBBY_PARENT_CID",
+    "ENABLE_PARTY",
 ];
 
 const REQUIRED_TABLES = [

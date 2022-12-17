@@ -22,5 +22,5 @@ Also acts as a bot to create channels for lobbies in the SAW portuguese communit
 - `TS3_PW` ts server query password
 - `LINKED_GID` group id to identify linked clients
 - `LOBBY_PARENT_CID` parent channel id to create lobby sub channels
+- `ENABLE_PARTY` `true` to create channels for parties
 - `TEST` (optional) define this to use `!getcid` to get the current channel id
-
