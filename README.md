@@ -15,3 +15,12 @@ Also acts as a bot to create channels for lobbies in the SAW portuguese communit
 - `FACEIT_CLIENTID` FACEIT oauth
 - `FACEIT_CLIENTSECRET` FACEIT oauth
 - `USERTOKEN` user login token to access clan's lobbys
+- `TS3_HOST` ts server hostname
+- `TS3_QUERYPORT` ts server query port
+- `TS3_SERVERPORT` ts server port
+- `TS3_USERNAME` ts server query username
+- `TS3_PW` ts server query password
+- `LINKED_GID` group id to identify linked clients
+- `LOBBY_PARENT_CID` parent channel id to create lobby sub channels
+- `TEST` (optional) define this to use `!getcid` to get the current channel id
+
