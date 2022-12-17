@@ -24,9 +24,10 @@ module.exports = (app) => {
     async function checkLobby(playerId, client) {
         // check lobby or party
         let lobby = await Faceit.getClanLobby(playerId);
-        if (lobby === null && process.env.ENABLE_PARTY === "true")
-            lobby = await Faceit.getParty(playerId);
-        if (lobby === null) return;
+        if (lobby === null) {
+            if (process.env.ENABLE_PARTY === "true") lobby = await Faceit.getParty(playerId);
+            if (lobby === null) return;
+        }
 
         // check if there is a channel for the lobby
         let channel = await teamspeak.getChannelByName(lobby.name);
