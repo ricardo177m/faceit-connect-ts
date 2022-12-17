@@ -74,6 +74,7 @@ router.get("/oauth/redirect", async (req, res) => {
                         // send success message to teamspeak client
                         req.app.emit("successfulLink", {
                             uuid: status.uuid,
+                            faceitId: userInfoResponse.data.guid,
                             nickname: userInfoResponse.data.nickname,
                         });
                         res.redirect("/success");

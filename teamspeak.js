@@ -21,6 +21,28 @@ module.exports = (app) => {
         teamspeak.clientAddServerGroup(client.databaseId, linkedGroupId);
     }
 
+    async function checkLobby(playerId, client) {
+        // check lobby
+        const lobby = await Faceit.getClanLobby(playerId);
+
+        if (lobby !== null) {
+            // check if there is a channel for the lobby
+            let channel = await teamspeak.getChannelByName(lobby.name);
+            if (!channel) {
+                channel = await teamspeak.channelCreate(lobby.name, {
+                    channelMaxclients: 5,
+                    channelFlagMaxclientsUnlimited: false,
+                    cpid: process.env.LOBBY_PARENT_CID,
+                    channelPassword: Generator.generateToken(),
+                });
+            }
+            try {
+                await teamspeak.clientMove(client.clid, channel.cid);
+            } catch (error) {} // client made request but left too early the ts server
+            teamspeak.clientMove((await teamspeak.whoami()).clientId, process.env.LOBBY_PARENT_CID);
+        }
+    }
+
     teamspeak.on("ready", () => {
         console.log(`${colors.green("[✔]")} TeamSpeak ready`);
 
@@ -47,23 +69,7 @@ module.exports = (app) => {
             // add client to server group "Linked" if not already in
             addToLinkedGroup(client);
 
-            // check lobby
-            const lobby = await Faceit.getClanLobby(status.faceit_id);
-
-            if (lobby !== null) {
-                // check if there is a channel for the lobby
-                let channel = await teamspeak.getChannelByName(lobby.name);
-                if (!channel) {
-                    channel = await teamspeak.channelCreate(lobby.name, {
-                        channelMaxclients: 5,
-                        channelFlagMaxclientsUnlimited: false,
-                        cpid: process.env.LOBBY_PARENT_CID,
-                        channelPassword: Generator.generateToken(),
-                    });
-                }
-                await teamspeak.clientMove(client.clid, channel.cid);
-                teamspeak.clientMove((await teamspeak.whoami()).clientId, process.env.LOBBY_PARENT_CID);
-            }
+            checkLobby(status.faceit_id, client);
         });
 
         teamspeak.on("clientdisconnect", async (event) => {
@@ -80,6 +86,7 @@ module.exports = (app) => {
             if (!client) return;
             teamspeak.sendTextMessage(client.clid, 1, config.teamspeak.successfulLinkMsg.replace("<NICKNAME>", data.nickname));
             addToLinkedGroup(client);
+            checkLobby(data.faceitId, client);
         });
 
         teamspeak.on("textmessage", (event) => {
