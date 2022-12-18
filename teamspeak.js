@@ -4,6 +4,7 @@ const { config } = require("./config/config");
 const Linkage = require("./utils/Linkage");
 const Faceit = require("./utils/Faceit");
 const Generator = require("./utils/Generator");
+const EventHandler = require("./utils/EventHandler");
 
 module.exports = (app) => {
     const teamspeak = new TeamSpeak({
@@ -74,15 +75,6 @@ module.exports = (app) => {
             checkLobby(status.faceit_id, client);
         });
 
-        teamspeak.on("clientdisconnect", async (event) => {
-            // search for all child channels of the lobby parent channel
-            const channels = await teamspeak.channelList({ pid: process.env.LOBBY_PARENT_CID });
-            channels.forEach(async (channel) => {
-                // if empty delete
-                if (channel.totalClients === 0) await teamspeak.channelDelete(channel.cid, true);
-            });
-        });
-
         app.on("successfulLink", async (data) => {
             const client = await teamspeak.getClientByUid(data.uuid);
             if (!client) return;
@@ -90,6 +82,8 @@ module.exports = (app) => {
             addToLinkedGroup(client);
             checkLobby(data.faceitId, client);
         });
+
+        app.on("lobbyEvent", async (event) => EventHandler(event, teamspeak));
 
         teamspeak.on("textmessage", (event) => {
             if ("TEST" in process.env && process.env.TEST === "1") {
@@ -99,7 +93,7 @@ module.exports = (app) => {
 
         teamspeak.on("close", async () => {
             console.log("Disconnected, trying to reconnect...");
-            await teamspeak.reconnect(-1, 10000);
+            await teamspeak.reconnect(-1, config.teamspeak.reconnectDelay);
             console.log("Reconnected!");
         });
     });

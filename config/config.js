@@ -9,6 +9,7 @@ const CONFIG = {
         oauthUserInfo: "https://api.faceit.com/auth/v1/resources/userinfo",
         openidConfig: "https://api.faceit.com/auth/v1/openid_configuration",
         accounts: "https://accounts.faceit.com",
+        edge: "wss://edge.faceit.com/v1/ws",
     },
 
     teamspeak: {
@@ -22,6 +23,7 @@ const CONFIG = {
             "        [color=#0cc43a]Bons jogos![/color]\n" +
             "[/b]",
         successfulLinkMsg: "[b]A tua FACEIT foi vinculada com sucesso, bem-vindo [color=#ff5500]<NICKNAME>[/color]![/b]",
+        reconnectDelay: 10000,
     },
 };
 
