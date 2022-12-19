@@ -25,6 +25,10 @@ const CONFIG = {
         successfulLinkMsg: "[b]A tua FACEIT foi vinculada com sucesso, bem-vindo [color=#ff5500]<NICKNAME>[/color]![/b]",
         reconnectDelay: 10000,
     },
+
+    edge: {
+        reconnectDelay: 2000,
+    }
 };
 
 module.exports = {

@@ -9,7 +9,7 @@ const httpServer = http.createServer(app);
 const colors = require("@colors/colors/safe");
 const DoChecks = require("./utils/DoChecks");
 const teamspeak = require("./teamspeak")(app);
-const edge = require("./edge")(app);
+require("./edge")(app);
 
 // app specific
 app.data = {};
@@ -29,7 +29,6 @@ DoChecks()
     .catch(() => {
         console.log(`\n${colors.red("[!]")} Some checks have not passed, stopping.\n`);
         teamspeak.quit();
-        edge.close();
         process.exit(-1);
     });
 

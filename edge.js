@@ -1,11 +1,8 @@
 const ws = require("ws");
 const { config } = require("./config/config.js");
-const client = new ws(config.faceitEndpoints.edge);
 const colors = require("@colors/colors/safe");
 
 module.exports = (app) => {
-    let last = null;
-
     const outgoing = {
         welcomeAnonymous: "CPjKxAISFgoJMC4wLjAtZGV2Eglhbm9ueW1vdXM",
         pong: "CAASAhgC",
@@ -29,15 +26,6 @@ module.exports = (app) => {
         // lobby_destroyed -> <10_bytes> + <event> + <2_bytes> + <json_payload>
     };
 
-    function send(msg) {
-        client.send(Buffer.from(msg, "base64"));
-    }
-
-    function init() {
-        // subscribe to clan
-        send(outgoing.subscribe.clan(config.clanId));
-    }
-
     function parseEvent(eventType, msg) {
         // <left_bytes> + <event> + <right_bytes> + <json_payload>
         const bytesLeft = eventType.padding.l;
@@ -59,50 +47,67 @@ module.exports = (app) => {
         return JSON.parse(payload);
     }
 
-    client.on("open", () => {
-        console.log(`${colors.cyan("[i]")} Opened connection to FACEIT Edge`);
+    let client;
+    let connect = () => {
+        client = new ws(config.faceitEndpoints.edge);
+        let last = null;
 
-        // send the welcome anonymous message
-        send(outgoing.welcomeAnonymous);
-    });
+        function send(msg) {
+            client.send(Buffer.from(msg, "base64"));
+        }
 
-    client.on("close", (code, reason) => {
-        console.log(`${colors.cyan("[i]")} Closed connection to FACEIT Edge: ${code} ${reason}`);
-    });
+        function init() {
+            // subscribe to clan
+            send(outgoing.subscribe.clan(config.clanId));
+        }
 
-    client.on("error", (err) => {
-        console.log(`${colors.red("[✖]")} Error: ${err}`);
-    });
+        client.on("open", () => {
+            console.log(`${colors.cyan("[i]")} Opened connection to FACEIT Edge`);
 
-    client.on("message", (message) => {
-        // heartbeat
-        if (message.equals(Buffer.from(incoming.ping, "base64"))) return send(outgoing.pong);
+            // send the welcome anonymous message
+            send(outgoing.welcomeAnonymous);
+        });
 
-        // event
-        for (eventType of incoming.events) {
-            const parsed = parseEvent(eventType, message);
-            if (parsed !== null) {
-                const incomingEvent = {
-                    event: eventType.name,
-                    payload: parsed,
-                };
-                if (incomingEvent === last) return; // workaround for duplicate events
-                last = incomingEvent; // (sometimes the same event is sent twice)
+        client.on("close", (code, reason) => {
+            console.log(`${colors.cyan("[i]")} Closed connection to FACEIT Edge: ${code} ${reason}`);
+            // reconnect
+            setTimeout(connect, config.edge.reconnectDelay);
+        });
 
-                // do something with incomingEvent
-                app.emit("lobbyEvent", incomingEvent);
+        client.on("error", (err) => {
+            console.log(`${colors.red("[✖]")} Error: ${err}`);
+        });
 
+        client.on("message", (message) => {
+            // heartbeat
+            if (message.equals(Buffer.from(incoming.ping, "base64"))) return send(outgoing.pong);
+
+            // event
+            for (eventType of incoming.events) {
+                const parsed = parseEvent(eventType, message);
+                if (parsed !== null) {
+                    const incomingEvent = {
+                        event: eventType.name,
+                        payload: parsed,
+                    };
+                    if (incomingEvent === last) return; // workaround for duplicate events
+                    last = incomingEvent; // (sometimes the same event is sent twice)
+
+                    // do something with incomingEvent
+                    app.emit("lobbyEvent", incomingEvent);
+
+                    return;
+                }
+            }
+
+            // welcome message
+            if (message.equals(Buffer.from(incoming.welcome, "base64"))) {
+                console.log(`${colors.green("[✔]")} Welcome accepted. Init`);
+                init();
                 return;
             }
-        }
+        });
+    };
 
-        // welcome message
-        if (message.equals(Buffer.from(incoming.welcome, "base64"))) {
-            console.log(`${colors.green("[✔]")} Welcome accepted. Init`);
-            init();
-            return;
-        }
-    });
-
-    return client;
+    connect();
 };
