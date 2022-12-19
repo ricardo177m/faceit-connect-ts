@@ -27,9 +27,7 @@ app.use(validatePayload);
 DoChecks()
     .then(() => app.emit("ready"))
     .catch(() => {
-        console.log(
-            `\n${colors.red("[!]")} Some checks have not passed, stopping.\n`
-        );
+        console.log(`\n${colors.red("[!]")} Some checks have not passed, stopping.\n`);
         teamspeak.quit();
         edge.close();
         process.exit(-1);
@@ -39,7 +37,13 @@ DoChecks()
 // const BASE = "";
 app.use("/", require("./routes/Oauth"));
 
-app.use('/success', express.static('public/success.html'))
+app.set("view engine", "ejs");
+app.set("views", "./views");
+
+app.use("/success", express.static("public/success.html"));
+app.get("/warning", (req, res) => {
+    res.render("warning", { state: req.query.state === undefined ? "" : req.query.state });
+});
 
 // fall errors
 app.use((req, res, next) => {

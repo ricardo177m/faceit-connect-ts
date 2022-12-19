@@ -67,6 +67,15 @@ module.exports = (app) => {
 
         app.on("lobbyEvent", async (event) => EventHandler(event, teamspeak));
 
+        app.on("unlinked", async (uuid) => {
+            const clients = await teamspeak.serverGroupClientList(process.env.LINKED_GID);
+
+            const find = clients.find((client) => client.clientUniqueIdentifier === uuid);
+            if (!find) return;
+
+            await teamspeak.serverGroupDelClient(find.cldbid, process.env.LINKED_GID);
+        });
+
         teamspeak.on("textmessage", (event) => {
             if ("TEST" in process.env && process.env.TEST === "1") {
                 if (event.msg == "!getcid") teamspeak.sendTextMessage(event.invoker.clid, 1, event.invoker.cid);

@@ -36,9 +36,6 @@ module.exports = {
 
     /**
      * Retrieves the linkage status by FACEIT uuid.
-     * Beware: there can be multiple clients to a single FACEIT account.
-     * If you use this and the player has multiple PCs and he enters/creates a clan, it won't be detected.
-     * TODO: fix this.
      *
      * @param {*} faceitId FACEIT uuid
      * @returns null if failed, linkage status if success
@@ -51,6 +48,30 @@ module.exports = {
 
         if (!linkage_res.length) return null;
         return linkage_res[0];
+    },
+
+    /**
+     * Set temp.
+     */
+    setTemp: async (faceitId, nickname, token) => {
+        const query = "UPDATE link SET temp = ?, nickname = ? WHERE token = ?";
+        const params = [faceitId, nickname, token];
+        await dbpool.execute(query, params);
+    },
+
+    /**
+     * Unlink.
+     */
+    unlink: async (faceitId) => {
+        let query = "SELECT * FROM link WHERE faceit_id = ?";
+        let params = [faceitId];
+        const [linkage_res] = await dbpool.execute(query, params);
+
+        query = "DELETE FROM link WHERE faceit_id = ?";
+        params = [faceitId];
+        await dbpool.execute(query, params);
+
+        return linkage_res[0].uuid;
     },
 
     /**

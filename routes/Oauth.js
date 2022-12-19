@@ -21,6 +21,52 @@ router.get("/link", async (req, res) => {
     res.redirect(url);
 });
 
+router.get("/oauth/force", async (req, res) => {
+    if (req.query.state === undefined)
+        return res.status(400).json({
+            message: "Invalid token",
+            success: false,
+        });
+
+    const token = req.query.state;
+    const status = await Linkage.getLinkageStatusByToken(token);
+
+    if (status === null)
+        return res.status(400).json({
+            message: "Invalid token",
+            success: false,
+        });
+
+    if (status.temp === null)
+        return res.status(400).json({
+            message: "Invalid request",
+            success: false,
+        });
+
+    const oldLinked = await Linkage.getLinkageStatusByFaceitId(status.temp);
+    
+    if (oldLinked !== null) {
+        const oldUuid = await Linkage.unlink(status.temp);
+        req.app.emit("unlinked", oldUuid);
+    }
+
+    const linkSuccess = await Linkage.linkProfile(token, status.temp, status.nickname);
+
+    if (!linkSuccess)
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false,
+        });
+
+    // send success message to teamspeak client
+    req.app.emit("successfulLink", {
+        uuid: status.uuid,
+        faceitId: status.temp,
+        nickname: status.nickname,
+    });
+    res.redirect("/success");
+});
+
 router.get("/oauth/redirect", async (req, res) => {
     const clientid = process.env.FACEIT_CLIENTID;
     const clientsecret = process.env.FACEIT_CLIENTSECRET;
@@ -62,6 +108,13 @@ router.get("/oauth/redirect", async (req, res) => {
                                 message: "Invalid token",
                                 success: false,
                             });
+
+                        // check if user is already linked
+                        const linked = await Linkage.getLinkageStatusByFaceitId(userInfoResponse.data.guid);
+                        if (linked) {
+                            await Linkage.setTemp(userInfoResponse.data.guid, userInfoResponse.data.nickname, token);
+                            return res.redirect(`/warning?state=${token}`);
+                        }
 
                         const linkSuccess = await Linkage.linkProfile(token, userInfoResponse.data.guid, userInfoResponse.data.nickname);
 

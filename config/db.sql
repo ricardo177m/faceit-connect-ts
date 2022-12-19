@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS `link` (
   `nickname` varchar(64) DEFAULT NULL,
   `token` varchar(8),
   `linked_at` timestamp DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `temp` varchar(36) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
 CREATE TABLE IF NOT EXISTS `channel` (
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `channel` (
 ALTER TABLE `link`
   ADD PRIMARY KEY (`uuid`),
   ADD UNIQUE KEY `token` (`token`);
+  ADD UNIQUE KEY `faceit_id` (`faceit_id`);
 COMMIT;
 
 ALTER TABLE `channel`
