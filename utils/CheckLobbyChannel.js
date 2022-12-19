@@ -26,7 +26,6 @@ module.exports = async (lobbyId, lobbyName, client, teamspeak) => {
         LobbyChannel.addMemberPermission(client.cid, client.uniqueIdentifier, teamspeak);
         const msg = "[b]Esta sala está agora associada ao teu lobby. [color=#ff5500]Bom jogo![/color][/b]";
         teamspeak.sendTextMessage(client.clid, 1, msg);
-        LobbyChannel.addMemberPermission(channel_db.channel_id, client.uniqueIdentifier, teamspeak);
         return;
     }
 
