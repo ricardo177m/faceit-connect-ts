@@ -84,8 +84,12 @@ module.exports = (event, teamspeak) => {
             const channel = await teamspeak.getChannelById(channel_db.channel_id.toString());
             if (!channel) return; // channel was deleted
 
-            const clients = await teamspeak.channelGroupClientList(process.env.LOBBY_MEMBER_CHANNELGID, channel_db.channel_id);
-            for (const client of clients) LobbyChannel.removeMemberPermission(channel_db.channel_id, client.cldbid, teamspeak, true);
+            try {
+                const clients = await teamspeak.channelGroupClientList(process.env.LOBBY_MEMBER_CHANNELGID, channel_db.channel_id);
+                for (const client of clients) LobbyChannel.removeMemberPermission(channel_db.channel_id, client.cldbid, teamspeak, true);
+            } catch (error) {
+                console.log(error);
+            }
 
             // removes entry from db
             await LobbyChannel.removeChannelLobby(lobbyId);
