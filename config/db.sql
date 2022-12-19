@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS `link` (
 
 CREATE TABLE IF NOT EXISTS `channel` (
   `channel_id` int NOT NULL,
-  `lobby_id` varchar(36) NOT NULL
+  `lobby_id` varchar(36) NOT NULL,
   `created_by_bot` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 

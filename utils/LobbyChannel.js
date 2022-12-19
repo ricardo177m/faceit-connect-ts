@@ -119,13 +119,24 @@ module.exports = {
             if (!channel) return false;
             // default channel cannot be lobby channel
             if (channel.flagDefault) return false;
-            // child channels of lobby parent channel already are lobby channels
-            if (channel.pid == process.env.LOBBY_PARENT_CID) return false;
             // if channel is already lobby channel then it can't be used
             const sql = "SELECT * FROM channel WHERE channel_id = ?";
             const params = [channelId];
             const [result] = await dbpool.query(sql, params);
             return result.length === 0;
+        } catch (error) {
+            console.log(error);
+            return false;
+        }
+    },
+
+    isParentLobbyChannel: async (channelId, teamspeak) => {
+        try {
+            const channel = await teamspeak.getChannelById(channelId.toString());
+            if (!channel) return false;
+            // default channel cannot be lobby channel
+            if (channel.flagDefault) return false;
+            if (channel.pid == process.env.LOBBY_PARENT_CID) return true;
         } catch (error) {
             console.log(error);
             return false;

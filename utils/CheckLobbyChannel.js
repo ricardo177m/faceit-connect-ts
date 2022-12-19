@@ -21,7 +21,9 @@ module.exports = async (lobbyId, lobbyName, client, teamspeak) => {
     const isPotentialLobbyChannel = await LobbyChannel.isClientChannelPotentialLobbyChannel(client.cid, teamspeak);
 
     if (isPotentialLobbyChannel) {
-        const result = await LobbyChannel.setLobbyChannel(lobbyId, client.cid, false);
+        // is channel a child of lobby channel?
+        const isChild = await LobbyChannel.isParentLobbyChannel(client.cid, teamspeak);
+        const result = await LobbyChannel.setLobbyChannel(lobbyId, client.cid, isChild);
         if (!result) return;
         LobbyChannel.addMemberPermission(client.cid, client.uniqueIdentifier, teamspeak);
         const msg = "[b]Esta sala está agora associada ao teu lobby. [color=#ff5500]Bom jogo![/color][/b]";

@@ -3,6 +3,8 @@
 Links a TeamSpeak identity to a FACEIT account.
 Also acts as a bot to create channels for lobbies in the SAW portuguese community clan.
 
+TODO: use TypeScript
+
 ## .env
 
 - `ALLOWED_DOMAINS` array for cors

@@ -88,7 +88,8 @@ module.exports = (event, teamspeak) => {
                 const clients = await teamspeak.channelGroupClientList(process.env.LOBBY_MEMBER_CHANNELGID, channel_db.channel_id);
                 for (const client of clients) LobbyChannel.removeMemberPermission(channel_db.channel_id, client.cldbid, teamspeak, true);
             } catch (error) {
-                console.log(error);
+                // console.log(error);
+                // channel does not exist anymore
             }
 
             // removes entry from db
