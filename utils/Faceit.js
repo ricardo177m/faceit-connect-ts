@@ -38,10 +38,10 @@ module.exports = {
                     if (searchInLobby(response.data.payload[i].current_players, faceitPlayerId)) {
                         let ids = [];
                         for (let j = 0; j < response.data.payload[i].current_players.length; j++) ids.push(response.data.payload[i].current_players[j].id);
-
+                        
                         return {
                             type: "lobby",
-                            name: response.data.payload[i].name,
+                            name: response.data.payload[i].description,
                             id: response.data.payload[i].id,
                             members: ids,
                             exists: true,

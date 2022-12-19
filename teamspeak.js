@@ -3,8 +3,8 @@ const colors = require("@colors/colors/safe");
 const { config } = require("./config/config");
 const Linkage = require("./utils/Linkage");
 const Faceit = require("./utils/Faceit");
-const Generator = require("./utils/Generator");
 const EventHandler = require("./utils/EventHandler");
+const CheckLobbyChannel = require("./utils/CheckLobbyChannel");
 
 module.exports = (app) => {
     const teamspeak = new TeamSpeak({
@@ -30,23 +30,10 @@ module.exports = (app) => {
             if (lobby === null) return;
         }
 
-        // check if there is a channel for the lobby
-        let channel = await teamspeak.getChannelByName(lobby.name);
-        if (!channel) {
-            channel = await teamspeak.channelCreate(lobby.name, {
-                channelMaxclients: 5,
-                channelFlagMaxclientsUnlimited: false,
-                cpid: process.env.LOBBY_PARENT_CID,
-                channelPassword: Generator.generateToken(),
-            });
-        }
-        try {
-            await teamspeak.clientMove(client.clid, channel.cid);
-        } catch (error) {} // client made request but left too early the ts server
-        teamspeak.clientMove((await teamspeak.whoami()).clientId, process.env.LOBBY_PARENT_CID); // move server query to another channel
+        CheckLobbyChannel(lobby.id, lobby.name, client, teamspeak);
     }
 
-    teamspeak.on("ready", () => {
+    teamspeak.on("ready", async () => {
         console.log(`${colors.green("[✔]")} TeamSpeak ready`);
 
         teamspeak.on("clientconnect", async (event) => {
@@ -65,13 +52,8 @@ module.exports = (app) => {
                 return;
             }
 
-            // linked, check if client is in default channel
-            // const channel = await teamspeak.getChannelById(client.cid);
-            // if (!channel.flagDefault) return;
-
-            // add client to server group "Linked" if not already in
+            // linked, add client to server group "Linked" if not already in
             addToLinkedGroup(client);
-
             checkLobby(status.faceit_id, client);
         });
 

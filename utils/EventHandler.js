@@ -1,28 +1,97 @@
+const CheckLobbyChannel = require("./CheckLobbyChannel");
+const Faceit = require("./Faceit");
+const Linkage = require("./Linkage");
+const LobbyChannel = require("./LobbyChannel");
+
 module.exports = (event, teamspeak) => {
-    if (handlers[event.event] === undefined) return;
-    handlers[event.event](event, teamspeak);
-
     const handlers = {
-        lobby_created: (event, teamspeak) => {
+        lobby_created: async (event, teamspeak) => {
             // creates a channel for the lobby if owner is in ts server
-            // and is in default channel or child channel of lobby parent channel
+            const playerId = event.payload.entity.owner.id;
+
+            const linkageStatus = await Linkage.getLinkageStatusByFaceitId(playerId);
+            if (!linkageStatus) return; // player is not linked
+
+            const client = await teamspeak.getClientByUid(linkageStatus.uuid);
+            if (!client) return; // player is not in ts server
+
+            const lobbyId = event.payload.entity.id;
+            const lobbyName = event.payload.entity.description;
+
+            CheckLobbyChannel(lobbyId, lobbyName, client, teamspeak);
         },
 
-        lobby_updated: (event, teamspeak) => {
+        lobby_updated: async (event, teamspeak) => {
             // change channel name if it was created by bot
+            const lobbyId = event.payload.entity.id;
             const name = event.payload.entity.description;
-            
-            // const channel = teamspeak.getChannelBy
-            // if (channel === null) return;
-            // channel.edit({ channelName: name });
+
+            const channel_db = await LobbyChannel.getChannelByLobbyId(lobbyId);
+            if (!channel_db || !channel_db.created_by_bot) return;
+
+            LobbyChannel.updateLobbyChannel(channel_db.channel_id, name, teamspeak);
         },
 
-        lobby_player_joined: (event, teamspeak) => {
+        lobby_player_joined: async (event, teamspeak) => {
             // moves client to lobby channel if it exists and is online
+            const lobbyId = event.payload.entity.lobby_id;
+            const playerId = event.payload.entity.player.id;
+
+            const linkageStatus = await Linkage.getLinkageStatusByFaceitId(playerId);
+            if (!linkageStatus) return; // player is not linked
+
+            const client = await teamspeak.getClientByUid(linkageStatus.uuid);
+            if (!client) return; // player is not in ts server
+
+            const lobbyData = await Faceit.getClanLobby(playerId);
+            if (!lobbyData) return;
+
+            const lobbyName = lobbyData.name;
+            CheckLobbyChannel(lobbyId, lobbyName, client, teamspeak);
         },
 
-        lobby_player_left: (event, teamspeak) => {
+        lobby_player_left: async (event, teamspeak) => {
+            // removes channel member perms from client (if channel still exists)
+            const lobbyId = event.payload.entity.lobby_id;
+            const playerId = event.payload.entity.player_id;
+
+            const channel_db = await LobbyChannel.getChannelByLobbyId(lobbyId);
+            if (!channel_db) return;
+
+            const linkageStatus = await Linkage.getLinkageStatusByFaceitId(playerId);
+            if (!linkageStatus) return; // player is not linked
+
+            await LobbyChannel.removeMemberPermission(channel_db.channel_id, linkageStatus.uuid, teamspeak, false);
+
             // moves client to default channel if he is online and in lobby channel
+            const client = await teamspeak.getClientByUid(linkageStatus.uuid);
+            if (!client) return; // player is not in ts server
+
+            if (client.cid === channel_db.channel_id.toString()) {
+                await LobbyChannel.moveClientToDefaultChannel(linkageStatus.uuid, teamspeak);
+                const msg = "[b]Foste removido do canal porque saíste do lobby.[/b]";
+                teamspeak.sendTextMessage(client.clid, 1, msg);
+            }
+        },
+
+        lobby_destroyed: async (event, teamspeak) => {
+            // removes channel member perms from all members (if channel still exists)
+            const lobbyId = event.payload.entity;
+
+            const channel_db = await LobbyChannel.getChannelByLobbyId(lobbyId);
+            if (!channel_db) return;
+
+            const channel = await teamspeak.getChannelById(channel_db.channel_id.toString());
+            if (!channel) return; // channel was deleted
+
+            const clients = await teamspeak.channelGroupClientList(process.env.LOBBY_MEMBER_CHANNELGID, channel_db.channel_id);
+            for (const client of clients) LobbyChannel.removeMemberPermission(channel_db.channel_id, client.cldbid, teamspeak, true);
+
+            // removes entry from db
+            await LobbyChannel.removeChannelLobby(lobbyId);
         },
     };
+
+    if (handlers[event.event] === undefined) return;
+    handlers[event.event](event, teamspeak);
 };

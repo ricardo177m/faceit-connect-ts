@@ -17,11 +17,11 @@ const REQUIRED_ENV_VARS = [
     "LINKED_GID",
     "LOBBY_PARENT_CID",
     "ENABLE_PARTY",
+    "LOBBY_MEMBER_CHANNELGID",
+    "DEFAULT_CHANNELGID",
 ];
 
-const REQUIRED_TABLES = [
-    "link",
-];
+const REQUIRED_TABLES = ["link", "channel"];
 
 // const REQUIRED_SETTINGS = ["update_text"];
 

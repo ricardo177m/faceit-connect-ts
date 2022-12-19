@@ -23,4 +23,6 @@ Also acts as a bot to create channels for lobbies in the SAW portuguese communit
 - `LINKED_GID` group id to identify linked clients
 - `LOBBY_PARENT_CID` parent channel id to create lobby sub channels
 - `ENABLE_PARTY` `true` to create channels for parties
+- `LOBBY_MEMBER_CHANNELGID` channel group id with permission to join channels >= 55
+- `DEFAULT_CHANNELGID` default channel group id
 - `TEST` (optional) define this to use `!getcid` to get the current channel id
