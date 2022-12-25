@@ -4,7 +4,7 @@ const Linkage = require("../utils/Linkage");
 
 router.get("/teamspeak/isOnline", async (req, res) => {
     const teamspeak = req.app.teamspeak;
-    const { faceitId } = req.body;
+    const { faceitId } = req.query;
 
     if (!faceitId)
         return res.status(400).json({
