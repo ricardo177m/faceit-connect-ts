@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const validator = require("validator").default;
 const { config } = require("../config/config");
 const tools = require("../utils/tools");
 const dbpool = require("../services/db");

@@ -13,6 +13,7 @@ require("./edge")(app);
 
 // app specific
 app.data = {};
+app.teamspeak = teamspeak;
 
 // middlewares
 const { corsOptions } = require("./middlewares/corsOptions");
@@ -35,6 +36,7 @@ DoChecks()
 // routes
 // const BASE = "";
 app.use("/", require("./routes/Oauth"));
+app.use("/", require("./routes/Linkage"));
 
 app.set("view engine", "ejs");
 app.set("views", "./views");

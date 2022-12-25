@@ -36,6 +36,7 @@ module.exports = (app) => {
     teamspeak.on("ready", async () => {
         console.log(`${colors.green("[✔]")} TeamSpeak ready`);
 
+
         teamspeak.on("clientconnect", async (event) => {
             const client = event.client;
 
