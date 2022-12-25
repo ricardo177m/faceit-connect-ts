@@ -5,7 +5,7 @@ const CONFIG = {
     faceitEndpoints: {
         user: "https://api.faceit.com/users/v1/users",
         party: "https://api.faceit.com/lobby/v1/parties",
-        lobbies: "https://api.faceit.com/lobby/v1/lobbies",
+        lobbies: "https://api.faceit.com/lobby/v2/lobbies",
         oauthUserInfo: "https://api.faceit.com/auth/v1/resources/userinfo",
         openidConfig: "https://api.faceit.com/auth/v1/openid_configuration",
         accounts: "https://accounts.faceit.com",
@@ -24,6 +24,7 @@ const CONFIG = {
             "[/b]",
         successfulLinkMsg: "[b]A tua FACEIT foi vinculada com sucesso, bem-vindo [color=#ff5500]<NICKNAME>[/color]![/b]",
         reconnectDelay: 10000,
+        kickIfLeftLobby: false,
     },
 
     edge: {

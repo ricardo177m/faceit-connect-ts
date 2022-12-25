@@ -26,5 +26,6 @@ TODO: use TypeScript
 - `LOBBY_PARENT_CID` parent channel id to create lobby sub channels
 - `ENABLE_PARTY` `true` to create channels for parties
 - `LOBBY_MEMBER_CHANNELGID` channel group id with permission to join channels >= 55
+- `LOBBY_LEADER_CHANNELGID` channel group id for lobby leaders with permission to kick from the channel
 - `DEFAULT_CHANNELGID` default channel group id
 - `TEST` (optional) define this to use `!getcid` to get the current channel id

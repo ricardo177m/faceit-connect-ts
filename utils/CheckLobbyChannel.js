@@ -1,6 +1,6 @@
 const LobbyChannel = require("./LobbyChannel");
 
-module.exports = async (lobbyId, lobbyName, client, teamspeak) => {
+module.exports = async (lobbyId, lobbyName, isOwner, client, teamspeak) => {
     let channel_db = await LobbyChannel.getChannelByLobbyId(lobbyId);
 
     // lobby channel already exists
@@ -9,10 +9,12 @@ module.exports = async (lobbyId, lobbyName, client, teamspeak) => {
         const channel = await teamspeak.getChannelById(channel_db.channel_id.toString());
         // console.log(channel);
         if (channel) {
-            LobbyChannel.moveClientToLobbyChannel(channel_db.channel_id, client.clid, teamspeak);
-            const msg = "[b]Foste automaticamente movido para a sala do teu lobby. [color=#ff5500]Bom jogo![/color][/b]";
-            teamspeak.sendTextMessage(client.clid, 1, msg);
-            LobbyChannel.addMemberPermission(channel_db.channel_id, client.uniqueIdentifier, teamspeak);
+            const wasMoved = await LobbyChannel.moveClientToLobbyChannel(channel_db.channel_id, client.clid, teamspeak);
+            if (wasMoved) {
+                const msg = "[b]Foste automaticamente movido para a sala do teu lobby. [color=#ff5500]Bom jogo![/color][/b]";
+                teamspeak.sendTextMessage(client.clid, 1, msg);
+            }
+            LobbyChannel.addMemberPermission(channel_db.channel_id, client.uniqueIdentifier, isOwner, teamspeak);
             return;
         }
         await LobbyChannel.removeChannelLobby(lobbyId);
@@ -23,9 +25,8 @@ module.exports = async (lobbyId, lobbyName, client, teamspeak) => {
     if (isPotentialLobbyChannel) {
         // is channel a child of lobby channel?
         const isChild = await LobbyChannel.isParentLobbyChannel(client.cid, teamspeak);
-        const result = await LobbyChannel.setLobbyChannel(lobbyId, client.cid, isChild);
-        if (!result) return;
-        LobbyChannel.addMemberPermission(client.cid, client.uniqueIdentifier, teamspeak);
+        await LobbyChannel.setLobbyChannel(lobbyId, client.cid, isChild);
+        await LobbyChannel.addMemberPermission(client.cid, client.uniqueIdentifier, isOwner, teamspeak);
         const msg = "[b]Esta sala está agora associada ao teu lobby. [color=#ff5500]Bom jogo![/color][/b]";
         teamspeak.sendTextMessage(client.clid, 1, msg);
         return;
@@ -34,9 +35,8 @@ module.exports = async (lobbyId, lobbyName, client, teamspeak) => {
     // create a lobby channel
     const newChannelId = await LobbyChannel.createLobbyChannel(lobbyName, teamspeak);
     if (newChannelId === null) return;
-    const result = await LobbyChannel.setLobbyChannel(lobbyId, newChannelId, true);
-    if (!result) return;
-    LobbyChannel.addMemberPermission(newChannelId, client.uniqueIdentifier, teamspeak);
+    await LobbyChannel.setLobbyChannel(lobbyId, newChannelId, true);
+    await LobbyChannel.addMemberPermission(newChannelId, client.uniqueIdentifier, isOwner, teamspeak);
     // move client to lobby channel
     await LobbyChannel.moveClientToLobbyChannel(newChannelId, client.clid, teamspeak);
 

@@ -29,8 +29,8 @@ module.exports = (app) => {
             if (process.env.ENABLE_PARTY === "true") lobby = await Faceit.getParty(playerId);
             if (lobby === null) return;
         }
-
-        CheckLobbyChannel(lobby.id, lobby.name, client, teamspeak);
+        const isOwner = playerId === lobby.owner;
+        CheckLobbyChannel(lobby.id, lobby.name, isOwner, client, teamspeak);
     }
 
     teamspeak.on("ready", async () => {

@@ -46,8 +46,7 @@ module.exports = {
     setLobbyChannel: async (lobbyId, channelId, byBot) => {
         const sql = "INSERT INTO channel (channel_id, lobby_id, created_by_bot) VALUES (?,?,?)";
         const params = [channelId, lobbyId, byBot ? 1 : 0];
-        const [result] = await dbpool.query(sql, params);
-        return result.affectedRows !== 0;
+        await dbpool.query(sql, params);
     },
 
     updateLobbyChannel: async (channelId, lobbyName, teamspeak) => {
@@ -63,9 +62,12 @@ module.exports = {
         try {
             const client = await teamspeak.getClientById(clientId.toString());
             if (!client) return;
-            if (client.cid === channelId) return;
+            if (client.cid === channelId) return false;
             await teamspeak.clientMove(clientId, channelId);
-        } catch (error) {} // client made request but left too early the ts server
+            return true;
+        } catch (error) {
+            return false;
+        } // client made request but left too early the ts server
     },
 
     moveClientToDefaultChannel: async (clientUid, teamspeak) => {
@@ -86,13 +88,14 @@ module.exports = {
         }
     },
 
-    addMemberPermission: async (channelId, clientUid, teamspeak) => {
+    addMemberPermission: async (channelId, clientUid, isOwner, teamspeak) => {
         try {
             // check if client has a different permission than default
             const client = await teamspeak.getClientByUid(clientUid);
             if (!client) return;
-            if (client.cid === channelId) return;
-            await teamspeak.setClientChannelGroup(process.env.LOBBY_MEMBER_CHANNELGID, channelId, client.databaseId);
+            if ([process.env.DEFAULT_CHANNELGID, process.env.LOBBY_MEMBER_CHANNELGID].indexOf(client.channelGroupId) === -1) return;
+            const channelGroup = isOwner ? process.env.LOBBY_LEADER_CHANNELGID : process.env.LOBBY_MEMBER_CHANNELGID;
+            await teamspeak.setClientChannelGroup(channelGroup, channelId, client.databaseId);
         } catch (error) {
             console.log(error);
         }

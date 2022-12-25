@@ -1,3 +1,4 @@
+const { config } = require("../config/config");
 const CheckLobbyChannel = require("./CheckLobbyChannel");
 const Faceit = require("./Faceit");
 const Linkage = require("./Linkage");
@@ -18,7 +19,7 @@ module.exports = (event, teamspeak) => {
             const lobbyId = event.payload.entity.id;
             const lobbyName = event.payload.entity.description;
 
-            CheckLobbyChannel(lobbyId, lobbyName, client, teamspeak);
+            CheckLobbyChannel(lobbyId, lobbyName, true, client, teamspeak);
         },
 
         lobby_updated: async (event, teamspeak) => {
@@ -47,7 +48,7 @@ module.exports = (event, teamspeak) => {
             if (!lobbyData) return;
 
             const lobbyName = lobbyData.name;
-            CheckLobbyChannel(lobbyId, lobbyName, client, teamspeak);
+            CheckLobbyChannel(lobbyId, lobbyName, false, client, teamspeak);
         },
 
         lobby_player_left: async (event, teamspeak) => {
@@ -62,15 +63,27 @@ module.exports = (event, teamspeak) => {
             if (!linkageStatus) return; // player is not linked
 
             await LobbyChannel.removeMemberPermission(channel_db.channel_id, linkageStatus.uuid, teamspeak, false);
+            // check if new lobby owner is in ts server
 
-            // moves client to default channel if he is online and in lobby channel
-            const client = await teamspeak.getClientByUid(linkageStatus.uuid);
-            if (!client) return; // player is not in ts server
+            const lobby = await Faceit.getLobbyFromId(lobbyId);
+            if (!lobby) return;
+            
+            const newOwnerLinkageStatus = await Linkage.getLinkageStatusByFaceitId(lobby.owner);
+            if (!newOwnerLinkageStatus) return; // player is not linked
 
-            if (client.cid === channel_db.channel_id.toString()) {
-                await LobbyChannel.moveClientToDefaultChannel(linkageStatus.uuid, teamspeak);
-                const msg = "[b]Foste removido do canal porque saíste do lobby.[/b]";
-                teamspeak.sendTextMessage(client.clid, 1, msg);
+            // if new owner is in ts server, add owner permission
+            await LobbyChannel.addMemberPermission(channel_db.channel_id, newOwnerLinkageStatus.uuid, true, teamspeak);
+
+            if (config.teamspeak.kickIfLeftLobby) {
+                // moves client to default channel if he is online and in lobby channel
+                const client = await teamspeak.getClientByUid(linkageStatus.uuid);
+                if (!client) return; // player is not in ts server
+
+                if (client.cid === channel_db.channel_id.toString()) {
+                    await LobbyChannel.moveClientToDefaultChannel(linkageStatus.uuid, teamspeak);
+                    const msg = "[b]Foste removido do canal porque saíste do lobby.[/b]";
+                    teamspeak.sendTextMessage(client.clid, 1, msg);
+                }
             }
         },
 
